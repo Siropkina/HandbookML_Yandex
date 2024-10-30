@@ -1,0 +1,51 @@
+import numpy as np
+import pandas as pd
+from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, accuracy_score
+
+# Definition of the regressor model
+class MeanRegressor(BaseEstimator, RegressorMixin):
+    def fit(self, X, y):
+        self.mean_ = y.mean()
+        return self
+
+    def predict(self, X):
+        return np.full(shape=(X.shape[0],), fill_value=self.mean_)
+
+# Definishion of the classifier model
+class MostFrequentClassifier(BaseEstimator, ClassifierMixin):
+    def fit(self, X, y):
+        self.most_frequent_ = y.mode()[0]
+        return self
+
+    def predict(self, X):
+        return np.full(shape=(X.shape[0],), fill_value=self.most_frequent_)
+
+
+if __name__ == "__main__":
+    data = pd.read_csv('organisations.csv')
+
+    # Example for MeanRegressor
+    data_cleaned = data.dropna(subset=['average_bill'])
+    X = data_cleaned[['city', 'rating', 'rubrics_id', 'features_id']]
+    y = data_cleaned['average_bill']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+    mean_regressor = MeanRegressor()
+    mean_regressor.fit(X_train, y_train)
+    y_pred_regressor = mean_regressor.predict(X_test)
+    mse_regressor = mean_squared_error(y_test, y_pred_regressor)
+    print(f"Среднеквадратичная ошибка (регрессор): {mse_regressor:.4f}")
+
+    # Example for MostFrequentClassifier
+    data_cleaned = data.dropna(subset=['rubrics_id'])
+    X = data_cleaned[['city', 'rating', 'average_bill', 'features_id']]
+    y = data_cleaned['rubrics_id']
+    X_train_class, X_test_class, y_train_class, y_test_class = train_test_split(X, y, test_size=0.33, random_state=42)
+    most_frequent_classifier = MostFrequentClassifier()
+    most_frequent_classifier.fit(X_train_class, y_train_class)
+    y_pred_classifier = most_frequent_classifier.predict(X_test_class)
+    accuracy = accuracy_score(y_test_class, y_pred_classifier)
+    print(f"Наиболее частый тип заведения (классификатор): {most_frequent_classifier.most_frequent_}")
+    print(f"Точность классификатора: {accuracy:.4f}")
